@@ -1,0 +1,15 @@
+port={{cfg.port}}
+bind="{{cfg.bind}}"
+
+[database]
+user = "{{bind.database.first.cfg.username}}"
+password = "{{bind.database.first.cfg.password}}"
+{{#if bind.database.first.cfg.local_only ~}}
+bind = "127.0.0.1"
+{{else ~}}
+bind = "{{bind.database.first.sys.ip}}"
+{{/if ~}}
+port = {{bind.database.first.cfg.port}}
+name = "{{cfg.database_name}}"
+
+

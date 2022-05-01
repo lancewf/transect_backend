@@ -1,0 +1,82 @@
+hab pkg install chef/studio-common >/dev/null
+source "$(hab pkg path chef/studio-common)/bin/studio-common"
+
+install_if_missing core/curl curl
+
+source <(curl -s https://gist.githubusercontent.com/lancewf/3117853c8c5a04c7b01bac737887a30c/raw/375644621d44f2d638a4e3ab9cc2cbfb1b3d41d5/hab_helpers.sh)
+source <(curl -s https://gist.githubusercontent.com/lancewf/584ca17c7b50cfc859e7cf544c1a67e8/raw/0a64d480b81b1085f0c86a4da1b8b5c12bb9af01/hab_service_helper.sh)
+
+export SERVICE_NAME="transect_backend"
+export PORT=8099
+export MYSQL_PORT=3306
+export DB_PASSWORD="password123"
+export DB_USER_NAME="bob"
+export DB_NAME="transect"
+
+echo "Run 'start' to start the service"
+
+function start_binds() {
+  start_mysql
+}
+
+function create_config() {
+  create_config_folders
+  write_config_file "database_name = '$DB_NAME'\n"
+  append_config_file "port = $PORT\n"
+  append_config_file "bind = '127.0.0.1'\n"
+}
+
+function get_binds() {
+  echo "--bind database:mysql.default"
+}
+
+function start_mysql() {
+  install_if_missing core/busybox-static netstat;
+  netstat -an | grep $MYSQL_PORT | grep LISTEN >/dev/null 2>/dev/null
+  if [ $? == 0 ]; then
+    echo "mysql is already running";
+    return;
+  fi
+
+  service="mysql"
+
+  mkdir -p /hab/user/$service/config/
+  printf "app_username='$DB_USER_NAME'\n" > /hab/user/$service/config/user.toml
+  printf "app_password='$DB_PASSWORD'\n" >> /hab/user/$service/config/user.toml
+  printf "bind='127.0.0.1'\n" >> /hab/user/$service/config/user.toml
+  printf "local_only=true\n" >> /hab/user/$service/config/user.toml
+
+  hab svc load lancewf/$service
+
+  wait_or_fail_for_port_to_listen $MYSQL_PORT
+}
+
+function reload() {
+  hab svc unload $HAB_ORIGIN/$SERVICE_NAME
+  sleep 3
+  hab svc load $HAB_ORIGIN/$SERVICE_NAME $(get_binds)
+}
+
+function load_mysql() 
+{
+  install_if_missing core/mysql mysql
+  mysql -h 127.0.0.1 -u $DB_USER_NAME -p$DB_PASSWORD -D $DB_NAME < $1
+}
+
+function dump()
+{
+  install_if_missing core/mysql mysqldump
+  mysqldump -h 127.0.0.1 -u $DB_USER_NAME -p$DB_PASSWORD $DB_NAME > $1
+}
+
+function sql_cli()
+{
+  install_if_missing core/mysql mysql
+  mysql -h 127.0.0.1 -u $DB_USER_NAME -p$DB_PASSWORD
+}
+
+function create_database()
+{
+  install_if_missing core/mysql mysql
+  mysql -h 127.0.0.1 -u $DB_USER_NAME -p$DB_PASSWORD -e "create database IF NOT EXISTS $DB_NAME"
+}
