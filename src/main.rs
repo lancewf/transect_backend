@@ -5,6 +5,9 @@ extern crate mysql;
 extern crate serde_derive;
 use actix_web::{get, post, web, App, HttpServer, Responder, Result};
 use config::Config;
+extern crate chrono;
+
+use chrono::prelude::*;
 
 #[derive(Debug, Deserialize)]
 struct Settings {
@@ -25,8 +28,8 @@ struct Database {
 #[derive(Debug, Deserialize, Serialize)]
 struct Transect {
     id: String,
-    start_date: i32,
-    end_date: i32,
+    start_date: i64,
+    end_date: i64,
     start_lat: f32,
     start_lon: f32,
     end_lat: f32,
@@ -74,8 +77,30 @@ async fn one_transect(path: web::Path<String>, db_pool: web::Data<mysql::Pool>) 
     Ok(web::Json(t))
 }
 
+fn format_date(epoch_utc_date: i64) -> String {
+    // Create a NaiveDateTime from the timestamp
+    let naive = NaiveDateTime::from_timestamp(epoch_utc_date, 0);
+    
+    // Create a normal DateTime from the NaiveDateTime
+    let datetime: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+    
+    // Format the datetime how you want
+    let newdate = datetime.format("%Y-%m-%d %H:%M:%S");
+ 
+    format!("{}", newdate)
+}
+
 #[post("transect/")]
 async fn upsert_transect(transect: web::Json<Transect>, db_pool: web::Data<mysql::Pool>) -> impl Responder {
+    let start_date = format_date(transect.start_date);
+    let end_date = format_date(transect.end_date);
+
+    db_pool.prep_exec(r"INSERT INTO transect 
+        ( id, bearing, start_date, end_date, start_lat, start_lon, end_lat, end_lon, vessel_id, observer1_id, observer2_id) VALUES 
+        (:id, :bearing, :start_date, :end_date, :start_lat, :start_lon, :end_lat, :end_lon, :vessel_id, :observer1_id, :observer2_id)",
+        (&transect.id, transect.bearing, start_date, end_date, transect.start_lat, 
+            transect.start_lon, transect.end_lat, transect.end_lon, &transect.vessel_id, &transect.observer1_id, &transect.observer2_id)).unwrap();
+
     format!("Saving transect data for {:?}", transect)
 }
 
@@ -93,11 +118,6 @@ fn main() {
     println!("database_connection_string: {}", database_connection_string);
 
     let pool = mysql::Pool::new(database_connection_string).unwrap();
-
-    pool.prep_exec(r"CREATE TABLE if not exists payment (
-        customer_id int not null,
-        account_name text
-    )", ()).unwrap();
 
     start_server(config, pool).unwrap();
 }
