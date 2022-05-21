@@ -42,39 +42,73 @@ struct Transect {
 
 #[get("transect/")]
 async fn all_transects(db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Vec<Transect>>> {
-    let t = Transect{
-        id: String::from("3kfiefjslkdiefjslkfj"),
-        start_date: 392093,
-        end_date: 29309,
-        start_lat: 239.90,
-        start_lon: -239.90,
-        end_lat: 903.09,
-        end_lon: 390.90,
-        vessel_id: String::from("lsdfeijefl"),
-        bearing: 90,
-        observer1_id: String::from("fiekfisl"),
-        observer2_id: Some(String::from("slkefisl"))
-    };
-    Ok(web::Json(Vec::from([t])))
+    let query = "SELECT id, start_date, end_date, bearing, start_lat, \
+        start_lon, end_lat, end_lon, vessel_id, observer1_id, observer2_id from transect";
+    let transects: Vec<Transect> =
+        db_pool.prep_exec(query, ()).map(|result| {
+            result.map(|x| x.unwrap()).map(|row| {
+
+            let (id, start_date, end_date, bearing, 
+                start_lat, start_lon, end_lat, end_lon, vessel_id, 
+                observer1_id, observer2_id)  = mysql::from_row(row);
+
+            let _: NaiveDateTime = start_date;
+            let _: NaiveDateTime = end_date;
+
+            Transect{
+                id: id,
+                start_date: start_date.timestamp(),
+                end_date: end_date.timestamp(),
+                start_lat: start_lat,
+                start_lon: start_lon,
+                end_lat: end_lat,
+                end_lon: end_lon,
+                vessel_id: vessel_id,
+                bearing: bearing,
+                observer1_id: observer1_id,
+                observer2_id: observer2_id
+            }
+        }).collect()
+    }).unwrap();
+
+    Ok(web::Json(transects))
 }
 
+
 #[get("transect/{id}")]
-async fn one_transect(path: web::Path<String>, db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Transect>> {
-    let id = path.into_inner();
-    let t = Transect{
-        id: id,
-        start_date: 392093,
-        end_date: 29309,
-        start_lat: 239.90,
-        start_lon: -239.90,
-        end_lat: 903.09,
-        end_lon: 390.90,
-        vessel_id: String::from("lsdfeijefl"),
-        bearing: 90,
-        observer1_id: String::from("fiekfisl"),
-        observer2_id: Some(String::from("slkefisl"))
-    };
-    Ok(web::Json(t))
+async fn one_transect(path: web::Path<String>, db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Option<Transect>>> {
+    let transect_id = path.into_inner();
+    let query = "SELECT id, start_date, end_date, bearing, start_lat, start_lon, end_lat, \
+        end_lon, vessel_id, observer1_id, observer2_id from transect WHERE id = :id";
+
+    let params = params! {"id" => transect_id};
+    let transect: Option<Transect> = db_pool.prep_exec(query, params).map(|result| {
+        let mut rows = result.map(|x| x.unwrap());
+        rows.next().map(|row| {
+            let (id, start_date, end_date, bearing, 
+                start_lat, start_lon, end_lat, end_lon, vessel_id, 
+                observer1_id, observer2_id)  = mysql::from_row(row);
+
+            let _: NaiveDateTime = start_date;
+            let _: NaiveDateTime = end_date;
+
+            Transect{
+                id: id,
+                start_date: start_date.timestamp(),
+                end_date: end_date.timestamp(),
+                start_lat: start_lat,
+                start_lon: start_lon,
+                end_lat: end_lat,
+                end_lon: end_lon,
+                vessel_id: vessel_id,
+                bearing: bearing,
+                observer1_id: observer1_id,
+                observer2_id: observer2_id
+            }
+        })
+    }).unwrap();
+
+    Ok(web::Json(transect))
 }
 
 fn format_date(epoch_utc_date: i64) -> String {
