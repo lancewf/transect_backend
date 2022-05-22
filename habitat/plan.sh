@@ -19,6 +19,11 @@ pkg_build_deps=(
   core/openssl
 )
 
+pkg_exports=(
+   [port]=port
+   [local_only]=local_only
+)
+
 pkg_binds=(
   [database]="port username password local_only"
 )
