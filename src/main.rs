@@ -182,18 +182,25 @@ async fn upsert_transect(transect: web::Json<Transect>, db_pool: web::Data<mysql
 
         db_pool.prep_exec(r"INSERT INTO observation 
             ( id, transect_id, obs_type, date, bearing, count, lat, lon, distance_km, group_type, beaufort_type, weather_type) VALUES 
-            (:id, :transect_id, :obs_type, :date, :bearing, :count, :lat, :lon, :distance_km, :group_type, :beaufort_type, :weather_type)",
-            (&observation.id, &observation.transect_id, &observation.obs_type, date, observation.bearing,
-                observation.count, observation.lat, observation.lat, observation.distance_km, &observation.group_type, 
-                &observation.beaufort_type, &observation.weather_type)).unwrap()
+            (:id, :transect_id, :obs_type, :date, :bearing, :count, :lat, :lon, :distance_km, :group_type, :beaufort_type, :weather_type)
+            ON DUPLICATE KEY UPDATE transect_id=:transect_id, obs_type=:obs_type, date=:date, bearing=:bearing, count=:count,
+            lat=:lat, lon=:lon, distance_km=:distance_km, group_type=:group_type, beaufort_type=:beaufort_type, weather_type=:weather_type",
+            params!{"id" => &observation.id, "transect_id" => &observation.transect_id, 
+            "obs_type" => &observation.obs_type, "date" => date, "bearing" => observation.bearing,
+            "count" => observation.count, "lat" => observation.lat, "lon" => observation.lon, 
+            "distance_km" => observation.distance_km, "group_type" => &observation.group_type, 
+            "beaufort_type" => &observation.beaufort_type, "weather_type" => &observation.weather_type}).unwrap()
     }).collect();
 
 
     db_pool.prep_exec(r"INSERT INTO transect 
         ( id, bearing, start_date, end_date, start_lat, start_lon, end_lat, end_lon, vessel_id, observer1_id, observer2_id) VALUES 
-        (:id, :bearing, :start_date, :end_date, :start_lat, :start_lon, :end_lat, :end_lon, :vessel_id, :observer1_id, :observer2_id)",
-        (&transect.id, transect.bearing, start_date, end_date, transect.start_lat, 
-            transect.start_lon, transect.end_lat, transect.end_lon, &transect.vessel_id, &transect.observer1_id, &transect.observer2_id)).unwrap();
+        (:id, :bearing, :start_date, :end_date, :start_lat, :start_lon, :end_lat, :end_lon, :vessel_id, :observer1_id, :observer2_id)
+        ON DUPLICATE KEY UPDATE bearing=:bearing, start_date=:start_date, end_date=:end_date, start_lat=:start_lat, start_lon=:start_lon, end_lat=:end_lat, end_lon=:end_lon,
+        vessel_id=:vessel_id, observer1_id=:observer1_id, observer2_id=:observer2_id",
+        params!{"id" => &transect.id, "bearing" => transect.bearing, "start_date" => start_date, "end_date" => end_date, "start_lat" => transect.start_lat, 
+            "start_lon" => transect.start_lon, "end_lat" => transect.end_lat, "end_lon" => transect.end_lon, "vessel_id" => &transect.vessel_id, 
+            "observer1_id" => &transect.observer1_id, "observer2_id" => &transect.observer2_id}).unwrap();
 
     format!("Saving transect data for {:?}", transect)
 }
