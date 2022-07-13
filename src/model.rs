@@ -30,3 +30,15 @@ pub struct Observation {
     pub beaufort_type: Option<String>,
     pub weather_type: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Observer {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Vessel {
+    pub id: String,
+    pub name: String,
+}

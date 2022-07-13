@@ -31,3 +31,15 @@ create table IF NOT EXISTS observation(
    weather_type VARCHAR(255),
    PRIMARY KEY ( id )
 );
+
+create table IF NOT EXISTS observer(
+   id VARCHAR(255) NOT NULL,
+   name VARCHAR(255),
+   PRIMARY KEY ( id )
+);
+
+create table IF NOT EXISTS vessel(
+   id VARCHAR(255) NOT NULL,
+   name VARCHAR(255),
+   PRIMARY KEY ( id )
+);

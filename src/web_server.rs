@@ -10,6 +10,20 @@ async fn all_transects(db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Vec<
     Ok(web::Json(transects))
 }
 
+#[get("observer/")]
+async fn all_observers(db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Vec<model::Observer>>> {
+    let observers: Vec<model::Observer> = data_store::get_all_observers(&db_pool);
+
+    Ok(web::Json(observers))
+}
+
+#[get("vessel/")]
+async fn all_vessel(db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Vec<model::Vessel>>> {
+    let vessels: Vec<model::Vessel> = data_store::get_all_vessels(&db_pool);
+
+    Ok(web::Json(vessels))
+}
+
 #[get("transect/{id}")]
 async fn one_transect(path: web::Path<String>, db_pool: web::Data<mysql::Pool>) -> Result<web::Json<Option<model::Transect>>> {
     let transect_id = path.into_inner();
@@ -38,6 +52,8 @@ pub async fn start_server(config: build_config::Settings, pool: mysql::Pool) -> 
                 .service(all_transects)
                 .service(one_transect)
                 .service(upsert_transect)
+                .service(all_vessel)
+                .service(all_observers)
         )
         .bind(connection_string)?
         .run()

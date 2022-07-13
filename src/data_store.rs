@@ -11,6 +11,32 @@ pub fn create_pool(config: &build_config::Settings) -> mysql::Pool {
     mysql::Pool::new(database_connection_string).unwrap()
 }
 
+pub fn get_all_observers(db_pool: &mysql::Pool) -> Vec<model::Observer> {
+    let query = "SELECT id, name from observer";
+
+    let rows = db_pool.prep_exec(query,()).map(|result| 
+            result.map(|x| x.unwrap())).unwrap();
+
+    rows.map(|row| {
+        let (id, name) = mysql::from_row::<(String, String)>(row);
+
+        model::Observer{ id, name }
+    }).collect()
+}
+
+pub fn get_all_vessels(db_pool: &mysql::Pool) -> Vec<model::Vessel> {
+    let query = "SELECT id, name from vessel";
+
+    let rows = db_pool.prep_exec(query,()).map(|result| 
+            result.map(|x| x.unwrap())).unwrap();
+
+    rows.map(|row| {
+        let (id, name) = mysql::from_row::<(String, String)>(row);
+
+        model::Vessel{ id, name }
+    }).collect()
+}
+
 pub fn get_observations(transect_id: String, db_pool: &mysql::Pool) -> Vec<model::Observation> {
     let query = "SELECT id, obs_type, date, bearing, count, lat, lon, distance_km, group_type, \
         beaufort_type, weather_type from observation WHERE transect_id = :transect_id";
