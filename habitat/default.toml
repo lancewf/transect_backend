@@ -7,3 +7,5 @@ database_name="transect"
 port=8088
 bind="127.0.0.1"
 local_only=true
+api_key="abcdefghijklmnopqrstuvwxyz"
+api_validation=false

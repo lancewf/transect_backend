@@ -1,5 +1,7 @@
 port={{cfg.port}}
 bind="{{cfg.bind}}"
+api_key="{{cfg.api_key}}"
+api_validation={{cfg.api_validation}}
 
 [database]
 user = "{{bind.database.first.cfg.username}}"

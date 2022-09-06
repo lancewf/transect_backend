@@ -1,13 +1,15 @@
 use config::Config;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
   pub port: i16,
   pub bind: String,
   pub database: Database,
+  pub api_key: String,
+  pub api_validation: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Database {
     pub user: String,
     pub password: String,
