@@ -23,8 +23,8 @@ pub struct Observation {
     pub date: i64,
     pub lat: f32,
     pub lon: f32,
-    pub bearing: Option<i64>,
-    pub count: Option<i64>,
+    pub bearing: Option<usize>,
+    pub count: Option<usize>,
     pub distance_km: Option<f32>,
     pub group_type: Option<String>,
     pub beaufort_type: Option<String>,
@@ -41,4 +41,9 @@ pub struct Observer {
 pub struct Vessel {
     pub id: String,
     pub name: String,
+    pub number_of_transects: usize,
+    pub number_of_sightings: usize,
+    pub total_duration_of_all_transects_secs: i64,
+    pub total_distance_of_all_transects_km: f64,
+    pub number_of_animals: usize,
 }
